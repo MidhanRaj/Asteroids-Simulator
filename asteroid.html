@@ -17,7 +17,6 @@
             background: linear-gradient(135deg, #0c0c2b 0%, #1a1a3e 100%);
             color: white;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
         .container {
@@ -54,7 +53,6 @@
 
         .controls-panel {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 25px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -95,7 +93,6 @@
             background: white;
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
 
         .value-display {
@@ -121,11 +118,6 @@
             color: white;
             cursor: pointer;
             text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .comp-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
         }
 
         .comp-btn.active {
@@ -144,17 +136,10 @@
             font-weight: bold;
             cursor: pointer;
             margin-top: 20px;
-            transition: transform 0.2s ease;
-        }
-
-        #launch-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
         }
 
         .map-container {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
             border-radius: 20px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -164,7 +149,6 @@
         #map {
             width: 100%;
             height: 100%;
-            border-radius: 20px;
         }
 
         .results-panel {
@@ -174,7 +158,6 @@
             width: 400px;
             max-height: 90%;
             background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -193,7 +176,6 @@
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
 
         .impact-section:hover {
@@ -235,16 +217,6 @@
             z-index: 1000;
         }
 
-        .city-name {
-            font-weight: bold;
-            color: #ffff00;
-        }
-
-        .ocean-impact {
-            color: #00ffff;
-            font-weight: bold;
-        }
-
         .visualization-controls {
             position: absolute;
             top: 20px;
@@ -270,7 +242,16 @@
         .viz-btn.active {
             background: #ffff00;
             color: black;
-            border-color: #ffff00;
+        }
+
+        .circle-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            pointer-events: none;
+            z-index: 1001;
         }
 
         .explosion {
@@ -284,46 +265,32 @@
         }
 
         @keyframes explode {
-            0% {
-                width: 0px;
-                height: 0px;
-                opacity: 1;
-            }
-            100% {
-                width: 400px;
-                height: 400px;
-                opacity: 0;
-            }
+            0% { width: 0px; height: 0px; opacity: 1; }
+            100% { width: 400px; height: 400px; opacity: 0; }
         }
 
-        .fireball-circle {
-            stroke: #ff4444;
-            stroke-width: 2;
-            fill: rgba(255, 68, 68, 0.1);
+        .image-upload {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
         }
 
-        .shockwave-circle {
-            stroke: #ffa500;
-            stroke-width: 2;
-            fill: rgba(255, 165, 0, 0.1);
+        .upload-btn {
+            padding: 8px 15px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
         }
 
-        .wind-circle {
-            stroke: #ffff00;
-            stroke-width: 2;
-            fill: rgba(255, 255, 0, 0.1);
-        }
-
-        .earthquake-circle {
-            stroke: #00ffff;
-            stroke-width: 2;
-            fill: rgba(0, 255, 255, 0.1);
-        }
-
-        .tsunami-circle {
-            stroke: #0066ff;
-            stroke-width: 2;
-            fill: rgba(0, 102, 255, 0.1);
+        .uploaded-image {
+            max-width: 100%;
+            max-height: 150px;
+            margin: 10px 0;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -367,7 +334,30 @@
                     <div class="slider-container">
                         <input type="range" id="angle" min="5" max="90" value="45" step="5">
                     </div>
-                    <div class="value-display" id="angle-value">45°</div>
+                    <div class="value-display" id="angle-value">45Â°</div>
+                </div>
+
+                <!-- Image Upload Section -->
+                <div class="control-group">
+                    <label>UPLOAD EFFECTS IMAGES</label>
+                    <div class="image-upload">
+                        <div>
+                            <button class="upload-btn" data-type="crater">Upload Crater Image</button>
+                            <input type="file" id="crater-upload" accept="image/*" style="display: none;">
+                        </div>
+                        <div>
+                            <button class="upload-btn" data-type="fireball">Upload Fireball Image</button>
+                            <input type="file" id="fireball-upload" accept="image/*" style="display: none;">
+                        </div>
+                        <div>
+                            <button class="upload-btn" data-type="earthquake">Upload Earthquake Image</button>
+                            <input type="file" id="earthquake-upload" accept="image/*" style="display: none;">
+                        </div>
+                        <div>
+                            <button class="upload-btn" data-type="tsunami">Upload Tsunami Image</button>
+                            <input type="file" id="tsunami-upload" accept="image/*" style="display: none;">
+                        </div>
+                    </div>
                 </div>
 
                 <button id="launch-btn">LAUNCH ASTEROID</button>
@@ -377,6 +367,7 @@
                 <div id="map"></div>
                 <div class="visualization-controls" id="viz-controls">
                     <strong>Show Zones:</strong><br>
+                    <button class="viz-btn" data-zone="crater">Crater</button>
                     <button class="viz-btn" data-zone="fireball">Fireball</button>
                     <button class="viz-btn" data-zone="shockwave">Shockwave</button>
                     <button class="viz-btn" data-zone="wind">Wind</button>
@@ -405,24 +396,60 @@
                 this.currentCity = "the ocean";
                 this.isOceanImpact = false;
                 this.circles = {};
+                this.circleLabels = {};
                 this.currentResults = null;
+                this.activeZone = 'all';
+                this.circlesCreated = false;
+                this.uploadedImages = {
+                    crater: null,
+                    fireball: null,
+                    earthquake: null,
+                    tsunami: null
+                };
                 this.initializeMap();
                 this.setupEventListeners();
+                this.setupImageUploads();
             }
 
             initializeMap() {
-                this.map = L.map('map', {
-                    zoomControl: true,
-                    attributionControl: true
-                }).setView([20, 0], 2);
-
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
-                    maxZoom: 19
+                this.map = L.map('map').setView([20, 0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Â© OpenStreetMap contributors'
                 }).addTo(this.map);
 
                 this.map.on('click', (e) => {
                     this.setImpactLocation(e.latlng);
+                });
+            }
+
+            setupImageUploads() {
+                // Setup upload buttons
+                document.querySelectorAll('.upload-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const type = e.target.dataset.type;
+                        document.getElementById(`${type}-upload`).click();
+                    });
+                });
+
+                // Handle file inputs
+                document.querySelectorAll('input[type="file"]').forEach(input => {
+                    input.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        const type = e.target.id.replace('-upload', '');
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                this.uploadedImages[type] = event.target.result;
+                                // Show preview
+                                const preview = document.createElement('img');
+                                preview.src = event.target.result;
+                                preview.className = 'uploaded-image';
+                                preview.alt = `${type} image`;
+                                e.target.parentNode.appendChild(preview);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
                 });
             }
 
@@ -433,81 +460,39 @@
                     this.map.removeLayer(this.impactMarker);
                 }
 
-                this.impactMarker = L.marker(latlng, {
-                    icon: L.divIcon({
-                        className: 'custom-marker',
-                        html: '<div style="width: 24px; height: 24px; background: #ff4444; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px rgba(255,0,0,0.8);"></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    })
-                }).addTo(this.map);
-
-                // Check if it's ocean impact and get location info
-                const locationInfo = await this.getLocationInfo(latlng.lat, latlng.lng);
-                this.currentCity = locationInfo.name;
-                this.isOceanImpact = locationInfo.isOcean;
+                this.impactMarker = L.marker(latlng).addTo(this.map);
+                this.isOceanImpact = this.isOcean(latlng.lat, latlng.lng);
+                this.currentCity = this.isOceanImpact ? "Open Ocean" : "Land Area";
                 
-                let locationText = `Impact Location: <span class="city-name">${this.currentCity}</span><br>`;
+                let locationText = `Impact Location: <span style="color: #ffff00">${this.currentCity}</span><br>`;
                 locationText += `Lat: ${latlng.lat.toFixed(4)}, Lng: ${latlng.lng.toFixed(4)}`;
                 if (this.isOceanImpact) {
-                    locationText += `<br><span class="ocean-impact">🌊 OCEAN IMPACT</span>`;
+                    locationText += `<br><span style="color: #00ffff">ðŸŒŠ OCEAN IMPACT</span>`;
                 }
                 
                 document.getElementById('location-info').innerHTML = locationText;
             }
 
-            async getLocationInfo(lat, lng) {
-                try {
-                    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
-                    const data = await response.json();
-                    
-                    // Check if it's ocean (no locality or city, and continent is empty)
-                    const isOcean = !data.city && !data.locality && !data.principalSubdivision && !data.countryName;
-                    
-                    return {
-                        name: data.city || data.locality || data.principalSubdivision || data.countryName || "Open Ocean",
-                        isOcean: isOcean
-                    };
-                } catch (error) {
-                    // If API fails, use simple ocean detection based on distance from land
-                    const isOcean = this.isPointInOcean(lat, lng);
-                    return {
-                        name: isOcean ? "Open Ocean" : "Unknown Location",
-                        isOcean: isOcean
-                    };
-                }
-            }
-
-            isPointInOcean(lat, lng) {
-                // Simple ocean detection - points far from continents are likely ocean
-                // This is a simplification - in a real app you'd use proper coastline data
-                const landProximityThreshold = 500; // km from nearest land
-                
-                // Major continental coordinates (simplified)
-                const continents = [
-                    {lat: 40, lng: -100}, // North America
-                    {lat: 20, lng: 0},    // Africa
-                    {lat: 50, lng: 10},   // Europe
-                    {lat: 30, lng: 100},  // Asia
-                    {lat: -25, lng: 135}, // Australia
-                    {lat: -70, lng: -60}  // Antarctica
+            isOcean(lat, lng) {
+                const landAreas = [
+                    {lat: 40, lng: -100, radius: 3000},
+                    {lat: 20, lng: 0, radius: 4000},
+                    {lat: 30, lng: 100, radius: 4000},
+                    {lat: -25, lng: 135, radius: 2000},
                 ];
                 
-                let minDistance = Number.MAX_VALUE;
-                continents.forEach(continent => {
-                    const distance = this.calculateDistance(lat, lng, continent.lat, continent.lng);
-                    minDistance = Math.min(minDistance, distance);
-                });
-                
-                return minDistance > landProximityThreshold;
+                for (let area of landAreas) {
+                    const distance = this.calculateDistance(lat, lng, area.lat, area.lng);
+                    if (distance < area.radius) return false;
+                }
+                return true;
             }
 
             calculateDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371; // Earth's radius in km
+                const R = 6371;
                 const dLat = (lat2 - lat1) * Math.PI / 180;
                 const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = 
-                    Math.sin(dLat/2) * Math.sin(dLat/2) +
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
                     Math.sin(dLon/2) * Math.sin(dLon/2);
                 const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
@@ -530,7 +515,7 @@
                 const angleSlider = document.getElementById('angle');
                 const angleValue = document.getElementById('angle-value');
                 angleSlider.addEventListener('input', (e) => {
-                    angleValue.textContent = e.target.value + '°';
+                    angleValue.textContent = e.target.value + 'Â°';
                 });
 
                 const compButtons = document.querySelectorAll('.comp-btn');
@@ -547,17 +532,18 @@
                 });
 
                 document.getElementById('another-btn').addEventListener('click', () => {
-                    this.clearVisualizations();
+                    this.clearAllVisualizations();
                     document.getElementById('results').classList.remove('visible');
                     document.getElementById('viz-controls').style.display = 'none';
+                    this.circlesCreated = false;
                 });
 
-                // Visualization controls
                 document.addEventListener('click', (e) => {
                     if (e.target.classList.contains('viz-btn')) {
                         document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
                         e.target.classList.add('active');
-                        this.updateVisualizations(e.target.dataset.zone);
+                        this.activeZone = e.target.dataset.zone;
+                        this.updateVisualizations(this.activeZone);
                     }
                     
                     if (e.target.closest('.impact-section')) {
@@ -582,75 +568,194 @@
                 };
 
                 this.showExplosion(this.impactLocation);
-                this.currentResults = this.calculateRealImpact(asteroid);
+                this.currentResults = this.calculateRealImpact(asteroid); // <-- replaced with realistic model
                 this.displayDetailedResults(this.currentResults);
                 this.createVisualizations(this.currentResults);
                 document.getElementById('viz-controls').style.display = 'block';
             }
 
+            /* -----------------------
+               REALISTIC IMPACT MODEL
+               (Melosh/Collins-inspired scaling,
+                USGS energyâ†’Mw for seismic)
+               ----------------------- */
             calculateRealImpact(asteroid) {
-                const energy = this.calculateEnergy(asteroid);
-                const diameterKm = asteroid.diameter / 1000;
-                
-                // Real formulas from impact research
-                const craterDiameter = 1.161 * Math.pow(energy, 0.294); // km
-                const fireballRadius = 0.002 * Math.pow(energy, 0.4) * 1000; // meters to km
-                const shockwaveRadius = 0.04 * Math.pow(energy, 0.37) * 1000; // meters to km
-                const windRadius = 0.08 * Math.pow(energy, 0.35) * 1000; // meters to km
-                const earthquakeRadius = 0.2 * Math.pow(energy, 0.3) * 1000; // meters to km
-                const tsunamiRadius = this.isOceanImpact ? 2.0 * Math.pow(energy, 0.4) * 1000 : 0; // meters to km
+                // Physical inputs
+                const density = this.getDensity(asteroid.composition); // kg/m^3
+                const radius_m = asteroid.diameter / 2.0; // m
+                const volume_m3 = (4/3) * Math.PI * Math.pow(radius_m, 3);
+                const mass_kg = density * volume_m3;
+                const velocity_ms = asteroid.speed * 1000; // km/s -> m/s
+                const angle_rad = asteroid.angle * Math.PI / 180;
 
+                // Kinetic energy (Joules)
+                const energy_J = 0.5 * mass_kg * velocity_ms * velocity_ms;
+                const energy_MT = energy_J / 4.184e15; // megatons TNT
+                const energy_GT = energy_MT / 1000; // gigatons
+
+                // Planetary constants (Earth)
+                const g = 9.81; // m/s^2
+                const rho_target = 2500; // target density (kg/m^3) - rock
+
+                // Atmospheric/airburst decision:
+                // Use a simple threshold: small bodies (diameter < ~50 m) often airburst.
+                const willAirburst = asteroid.diameter < 50;
+
+                // --- Crater scaling (transient crater diameter, meters) ---
+                // Using a Melosh-like scaling: D_tr â‰ˆ k * (E/Ï_t)^(1/3.4) * g^{-0.17}
+                // k ~ 1.161 is commonly used in simplified calculators
+                const D_transient_m = 1.161 * Math.pow((energy_J / rho_target), 1/3.4) * Math.pow(1.0 / g, 0.17);
+                // Final crater diameter (simple scaling factor, m)
+                const D_final_m = D_transient_m * (asteroid.diameter < 4000 ? 1.25 : 1.1);
+
+                // --- Fireball radius (km) ---
+                // rough scaling: R_fireball âˆ energy^(1/3)
+                // coefficient chosen to be conservative for visual consistency with real calculators
+                const fireballRadius_km = 1.5 * Math.pow(Math.max(energy_MT, 1e-9), 1/3);
+
+                // --- Thermal radiation radius (km)
+                // thermal effects scale with roughly similar power-law, coefficient chosen for order-of-magnitude realism
+                const thermalRadius_km = 6.0 * Math.pow(Math.max(energy_MT, 1e-9), 0.33);
+
+                // --- Airblast (shockwave) radius (km)
+                // overpressure zones scale roughly with cube-root; constants tuned to give plausible zones
+                const shockwaveRadius_km = 12.0 * Math.pow(Math.max(energy_MT, 1e-9), 0.37);
+
+                // --- Wind / structural damage radius (km)
+                const windRadius_km = 20.0 * Math.pow(Math.max(energy_MT, 1e-9), 0.35);
+
+                // --- Seismic (earthquake) equivalent:
+                // Only a tiny fraction of impact energy becomes seismic.
+                // Use realistic seismic efficiency range and compute Mw via USGS relation:
+                // log10(E_joules) = 5.24 + 1.44 * Mw  =>  Mw = (log10(E) - 5.24)/1.44
+                const seismicEfficiency = 1e-5; // reasonable central choice (literature range 1e-6..1e-4)
+                const seismicEnergy_J = energy_J * seismicEfficiency;
+                const Mw = seismicEnergy_J > 0 ? ((Math.log10(seismicEnergy_J) - 5.24) / 1.44) : 0.0;
+                // Felt distance heuristic (km) â€” crude but physically tied to Mw
+                // Use: feltDistance_km â‰ˆ 10^(0.5 * Mw) â€” provides tens to hundreds km for moderate Mw
+                const feltDistance_km = Math.pow(10, 0.5 * Mw);
+
+                // --- Tsunami (if ocean impact) ---
+                // Simple empirical scaling for tsunami reach and wave height (order-of-magnitude)
+                const tsunamiReach_km = this.isOceanImpact ? Math.min(1000, 200 * Math.pow(Math.max(energy_MT, 1e-9), 0.4)) : 0;
+                const tsunamiHeight_m = this.isOceanImpact ? Math.min(1200, 0.05 * Math.pow(Math.max(energy_MT, 1e-9), 0.45)) : 0;
+
+                // --- Population & casualty heuristics (kept as areaÃ—densityÃ—vulnerability)
+                // Use density buckets by zone scale (more realistic than single hard-coded values)
+                const estimateExposedPopulation = (radius_km) => {
+                    // choose a nominal population density that decreases with radius (urban center -> rural)
+                    let density = 50; // baseline ppl/km^2
+                    if (radius_km <= 2) density = 5000;       // city core scale
+                    else if (radius_km <= 10) density = 2000; // urban
+                    else if (radius_km <= 30) density = 500;  // suburban / towns
+                    else if (radius_km <= 100) density = 100; // rural
+                    else density = 10;                         // remote
+                    const area_km2 = Math.PI * Math.pow(radius_km, 2);
+                    return area_km2 * density;
+                };
+
+                // Casualty rates for each zone (illustrative; replace with region-specific vuln curves for production)
+                const fatalityRate = {
+                    fireball: 0.95,     // inside immediate fireball most perish
+                    thermal: 0.5,       // severe burns inside thermal radius
+                    shockwave: 0.35,
+                    wind: 0.2,
+                    earthquake: 0.05,
+                    tsunami: 0.3
+                };
+
+                // compute exposed & fatalities (avoid double-counting by treating zones independently but present ranges)
+                const fireball_pop = estimateExposedPopulation(fireballRadius_km);
+                const thermal_pop = estimateExposedPopulation(thermalRadius_km);
+                const shock_pop   = estimateExposedPopulation(shockwaveRadius_km);
+                const wind_pop    = estimateExposedPopulation(windRadius_km);
+                const quake_pop   = estimateExposedPopulation(Math.min(feltDistance_km, 500)); // cap for sanity
+                const tsunami_pop = this.isOceanImpact ? estimateExposedPopulation(Math.min(tsunamiReach_km, 500)) : 0;
+
+                const fireball_fatalities = Math.round(fireball_pop * fatalityRate.fireball);
+                const thermal_fatalities = Math.round(thermal_pop * fatalityRate.thermal);
+                const shock_fatalities   = Math.round(shock_pop * fatalityRate.shockwave);
+                const wind_fatalities    = Math.round(wind_pop * fatalityRate.wind);
+                const quake_fatalities   = Math.round(quake_pop * fatalityRate.earthquake);
+                const tsunami_fatalities = Math.round(tsunami_pop * fatalityRate.tsunami);
+
+                // best-effort combined fatalities (simple conservative union approximation)
+                // For now, take the maximum of zone fatalities rather than sum to reduce double counting:
+                const combinedWorst = Math.max(fireball_fatalities, thermal_fatalities, shock_fatalities, wind_fatalities, quake_fatalities, tsunami_fatalities);
+
+                // convenience conversions
                 const kmToMiles = 0.621371;
 
-                // Adjust population estimates based on ocean vs land impact
-                const populationDensity = this.isOceanImpact ? 0.1 : 50; // people per sq km
-                const tsunamiDensity = 100; // coastal population density
-
-                return {
+                // Formatted result object (units in miles where your UI expects miles)
+                const impactData = {
                     isOceanImpact: this.isOceanImpact,
-                    energy: energy,
+                    energyJ: energy_J,
+                    energyMT: Number(energy_MT.toFixed(3)),
+                    energyGT: Number(energy_GT.toFixed(6)),
+                    frequency: this.getImpactFrequency(asteroid.diameter),
+
+                    radii: {
+                        crater: (D_final_m / 1609.34) ,           // miles
+                        fireball: fireballRadius_km * kmToMiles, // miles
+                        thermal: thermalRadius_km * kmToMiles,
+                        shockwave: shockwaveRadius_km * kmToMiles,
+                        wind: windRadius_km * kmToMiles,
+                        earthquake: feltDistance_km * kmToMiles,
+                        tsunami: tsunamiReach_km * kmToMiles
+                    },
+
                     crater: {
-                        diameter: (craterDiameter * kmToMiles).toFixed(1),
-                        depth: (craterDiameter * 0.2 * kmToMiles * 5280).toFixed(0),
-                        vaporized: this.isOceanImpact ? "0" : this.estimatePopulation(craterDiameter * 0.5, 1.0, populationDensity)
+                        diameter: (D_final_m / 1609.34).toFixed(2), // miles
+                        depth: Math.round(D_final_m * 0.2 / 0.3048), // depth in feet approx (20% of diameter) convert m->ft
+                        vaporized: this.formatNumber(fireball_fatalities)
                     },
+
                     fireball: {
-                        radius: (fireballRadius * kmToMiles).toFixed(1),
-                        fatalities: this.isOceanImpact ? "0" : this.estimatePopulation(fireballRadius, 1.0, populationDensity),
-                        thirdDegree: this.isOceanImpact ? "0" : this.estimatePopulation(fireballRadius * 1.5, 0.8, populationDensity),
-                        secondDegree: this.isOceanImpact ? "0" : this.estimatePopulation(fireballRadius * 2.5, 0.6, populationDensity),
-                        clothesFire: (fireballRadius * 3 * kmToMiles).toFixed(0),
-                        treesFire: (fireballRadius * 5 * kmToMiles).toFixed(0)
+                        radius_miles: (fireballRadius_km * kmToMiles).toFixed(2),
+                        fatalities: this.formatNumber(fireball_fatalities)
                     },
+
+                    thermal: {
+                        radius_miles: (thermalRadius_km * kmToMiles).toFixed(2),
+                        fatalities: this.formatNumber(thermal_fatalities)
+                    },
+
                     shockwave: {
-                        radius: (shockwaveRadius * kmToMiles).toFixed(1),
-                        fatalities: this.isOceanImpact ? "0" : this.estimatePopulation(shockwaveRadius, 0.5, populationDensity),
-                        lungDamage: (shockwaveRadius * 0.6 * kmToMiles).toFixed(0),
-                        eardrums: (shockwaveRadius * 0.8 * kmToMiles).toFixed(0),
-                        buildingsCollapse: (shockwaveRadius * 1.2 * kmToMiles).toFixed(0),
-                        homesCollapse: (shockwaveRadius * 1.5 * kmToMiles).toFixed(0)
+                        radius_miles: (shockwaveRadius_km * kmToMiles).toFixed(2),
+                        fatalities: this.formatNumber(shock_fatalities)
                     },
+
                     wind: {
-                        radius: (windRadius * kmToMiles).toFixed(1),
-                        fatalities: this.isOceanImpact ? "0" : this.estimatePopulation(windRadius, 0.3, populationDensity),
-                        speed: Math.min(10000, 1000 * Math.pow(energy, 0.2)).toFixed(0),
-                        homesLeveled: (windRadius * 0.5 * kmToMiles).toFixed(0),
-                        tornadoZone: (windRadius * 0.8 * kmToMiles).toFixed(0),
-                        treesDown: (windRadius * 1.2 * kmToMiles).toFixed(0)
+                        radius_miles: (windRadius_km * kmToMiles).toFixed(2),
+                        fatalities: this.formatNumber(wind_fatalities)
                     },
+
                     earthquake: {
-                        radius: (earthquakeRadius * kmToMiles).toFixed(1),
-                        magnitude: Math.min(10, 4.5 + Math.log10(energy)).toFixed(1),
-                        fatalities: this.isOceanImpact ? "0" : this.estimatePopulation(earthquakeRadius, 0.1, populationDensity),
-                        feltDistance: (earthquakeRadius * 2 * kmToMiles).toFixed(0)
+                        magnitude: Number(Mw.toFixed(2)),
+                        fatalities: this.formatNumber(quake_fatalities),
+                        feltDistance: Math.round(feltDistance_km * kmToMiles)
                     },
-                    tsunami: {
-                        radius: (tsunamiRadius * kmToMiles).toFixed(1),
-                        waveHeight: Math.min(1000, 10 * Math.pow(energy, 0.3)).toFixed(0),
-                        coastalFatalities: this.isOceanImpact ? this.estimatePopulation(tsunamiRadius * 0.1, 0.2, tsunamiDensity) : "0",
-                        coastalDamage: (tsunamiRadius * 0.5 * kmToMiles).toFixed(0)
-                    }
+
+                    tsunami: this.isOceanImpact ? {
+                        reach_miles: (tsunamiReach_km * kmToMiles).toFixed(1),
+                        waveHeight_ft: Math.round(tsunamiHeight_m * 3.28084),
+                        fatalities: this.formatNumber(tsunami_fatalities)
+                    } : null,
+
+                    estimatedTotalFatalities_conservative: this.formatNumber(combinedWorst)
                 };
+
+                return impactData;
+            }
+
+            getImpactFrequency(diameterM) {
+                if (diameterM < 25) return "every 50 years";
+                if (diameterM < 50) return "every 200 years";
+                if (diameterM < 100) return "every 1,000 years";
+                if (diameterM < 200) return "every 5,000 years";
+                if (diameterM < 500) return "every 20,000 years";
+                if (diameterM < 1000) return "every 100,000 years";
+                return "every 500,000 years";
             }
 
             calculateEnergy(asteroid) {
@@ -658,19 +763,14 @@
                 const radius = asteroid.diameter / 2;
                 const volume = (4/3) * Math.PI * Math.pow(radius, 3);
                 const mass = density * volume;
-                const energy = 0.5 * mass * Math.pow(asteroid.speed * 1000, 2);
-                return energy / 4.184e15;
+                const energyJ = 0.5 * mass * Math.pow(asteroid.speed * 1000, 2);
+                // return energy in megatons for backward compatibility (original code sometimes expected this)
+                return energyJ / 4.184e15;
             }
 
             getDensity(composition) {
                 const densities = { rock: 3000, iron: 7800, carbon: 2200, gold: 19300 };
-                return densities[composition];
-            }
-
-            estimatePopulation(radiusKm, fatalityRate, density) {
-                const area = Math.PI * Math.pow(radiusKm, 2);
-                const population = area * density * fatalityRate;
-                return this.formatNumber(Math.round(Math.max(0, population)));
+                return densities[composition] || 3000;
             }
 
             formatNumber(num) {
@@ -678,104 +778,140 @@
             }
 
             createVisualizations(results) {
-                this.clearVisualizations();
-                
+                if (this.circlesCreated) {
+                    this.updateVisualizations(this.activeZone);
+                    return;
+                }
+
+                this.clearAllVisualizations();
                 if (!this.impactLocation) return;
 
                 const metersPerMile = 1609.34;
+                
+                const circleData = {
+                    crater: { 
+                        radius: results.radii.crater * metersPerMile, 
+                        color: '#8B4513', 
+                        label: 'Crater' 
+                    },
+                    fireball: { 
+                        radius: results.radii.fireball * metersPerMile, 
+                        color: '#ff4444', 
+                        label: 'Fireball' 
+                    },
+                    shockwave: { 
+                        radius: results.radii.shockwave * metersPerMile, 
+                        color: '#ffa500', 
+                        label: 'Shockwave' 
+                    },
+                    wind: { 
+                        radius: results.radii.wind * metersPerMile, 
+                        color: '#ffff00', 
+                        label: 'Wind Blast' 
+                    },
+                    earthquake: { 
+                        radius: results.radii.earthquake * metersPerMile, 
+                        color: '#00ffff', 
+                        label: 'Earthquake Felt' 
+                    }
+                };
 
-                if (!results.isOceanImpact) {
-                    // Land impact visualizations
-                    this.circles.fireball = L.circle(this.impactLocation, {
-                        radius: parseFloat(results.fireball.radius) * metersPerMile,
-                        className: 'fireball-circle',
-                        fillOpacity: 0.2,
-                        color: '#ff4444',
-                        weight: 2
-                    });
-
-                    this.circles.shockwave = L.circle(this.impactLocation, {
-                        radius: parseFloat(results.shockwave.radius) * metersPerMile,
-                        className: 'shockwave-circle',
-                        fillOpacity: 0.2,
-                        color: '#ffa500',
-                        weight: 2
-                    });
-
-                    this.circles.wind = L.circle(this.impactLocation, {
-                        radius: parseFloat(results.wind.radius) * metersPerMile,
-                        className: 'wind-circle',
-                        fillOpacity: 0.2,
-                        color: '#ffff00',
-                        weight: 2
-                    });
-
-                    this.circles.earthquake = L.circle(this.impactLocation, {
-                        radius: parseFloat(results.earthquake.radius) * metersPerMile,
-                        className: 'earthquake-circle',
-                        fillOpacity: 0.2,
-                        color: '#00ffff',
-                        weight: 2
-                    });
-                }
-
-                // Tsunami visualization for ocean impacts
-                if (results.isOceanImpact && parseFloat(results.tsunami.radius) > 0) {
-                    this.circles.tsunami = L.circle(this.impactLocation, {
-                        radius: parseFloat(results.tsunami.radius) * metersPerMile,
-                        className: 'tsunami-circle',
-                        fillOpacity: 0.2,
+                if (results.isOceanImpact && results.radii.tsunami > 0) {
+                    circleData.tsunami = {
+                        radius: results.radii.tsunami * metersPerMile,
                         color: '#0066ff',
-                        weight: 2
-                    });
+                        label: 'Tsunami Reach'
+                    };
                 }
 
-                // Show all circles initially
-                Object.values(this.circles).forEach(circle => circle.addTo(this.map));
+                Object.entries(circleData).forEach(([zone, data]) => {
+                    this.circles[zone] = L.circle(this.impactLocation, {
+                        radius: data.radius,
+                        fillOpacity: 0.06,
+                        color: data.color,
+                        weight: 2
+                    });
+
+                    const labelDistance = data.radius / metersPerMile;
+                    const labelLatLng = L.latLng(
+                        this.impactLocation.lat - (labelDistance * 0.02),
+                        this.impactLocation.lng
+                    );
+                    
+                    this.circleLabels[zone] = L.marker(labelLatLng, {
+                        icon: L.divIcon({
+                            className: 'circle-label',
+                            html: `<div style="color: ${data.color}; font-weight: bold;">${data.label}</div>`,
+                            iconSize: [100, 20],
+                            iconAnchor: [50, 10]
+                        })
+                    });
+                });
+
+                this.circlesCreated = true;
+                this.updateVisualizations(this.activeZone);
             }
 
-            clearVisualizations() {
+            clearAllVisualizations() {
+                Object.values(this.circles).forEach(circle => {
+                    if (circle) this.map.removeLayer(circle);
+                });
+                Object.values(this.circleLabels).forEach(label => {
+                    if (label) this.map.removeLayer(label);
+                });
+                this.circles = {};
+                this.circleLabels = {};
+                this.circlesCreated = false;
+            }
+
+            removeAllFromMap() {
                 Object.values(this.circles).forEach(circle => {
                     if (circle && this.map.hasLayer(circle)) {
                         this.map.removeLayer(circle);
                     }
                 });
-                this.circles = {};
+                Object.values(this.circleLabels).forEach(label => {
+                    if (label && this.map.hasLayer(label)) {
+                        this.map.removeLayer(label);
+                    }
+                });
             }
 
             updateVisualizations(zone) {
-                this.clearVisualizations();
+                if (!this.circlesCreated) return;
+
+                this.removeAllFromMap();
                 
                 if (zone === 'all') {
-                    Object.values(this.circles).forEach(circle => circle.addTo(this.map));
+                    Object.values(this.circles).forEach(circle => {
+                        if (circle) this.map.addLayer(circle);
+                    });
+                    Object.values(this.circleLabels).forEach(label => {
+                        if (label) this.map.addLayer(label);
+                    });
                 } else if (this.circles[zone]) {
-                    this.circles[zone].addTo(this.map);
+                    this.map.addLayer(this.circles[zone]);
+                    if (this.circleLabels[zone]) {
+                        this.map.addLayer(this.circleLabels[zone]);
+                    }
                 }
             }
 
             highlightZone(zoneType) {
-                this.clearVisualizations();
-                if (this.circles[zoneType]) {
-                    this.circles[zoneType].addTo(this.map);
-                }
+                this.updateVisualizations(zoneType);
             }
 
             showExplosion(latlng) {
-                const point = this.map.latLngToContainerPoint(latlng);
-                const mapContainer = document.getElementById('map');
-                
-                const explosion = document.createElement('div');
-                explosion.className = 'explosion';
-                explosion.style.position = 'absolute';
-                explosion.style.left = point.x + 'px';
-                explosion.style.top = point.y + 'px';
-                explosion.style.zIndex = '500';
-                
-                mapContainer.appendChild(explosion);
-                
+                const explosion = L.circle(latlng, {
+                    radius: 1000,
+                    color: '#ff4444',
+                    fillColor: '#ffff00',
+                    fillOpacity: 0.6
+                }).addTo(this.map);
+
                 setTimeout(() => {
-                    if (explosion.parentNode) {
-                        explosion.parentNode.removeChild(explosion);
+                    if (this.map.hasLayer(explosion)) {
+                        this.map.removeLayer(explosion);
                     }
                 }, 1000);
             }
@@ -783,54 +919,81 @@
             displayDetailedResults(results) {
                 const impactData = document.getElementById('impact-data');
                 
+                // Add uploaded images to results
+                let imagesHtml = '';
+                Object.entries(this.uploadedImages).forEach(([type, src]) => {
+                    if (src) {
+                        imagesHtml += `<img src="${src}" class="uploaded-image" alt="${type}" style="max-width: 100%; margin: 10px 0; border-radius: 5px;">`;
+                    }
+                });
+
                 if (results.isOceanImpact) {
-                    impactData.innerHTML = `
-                        <div class="impact-section">
-                            <h3>🌊 OCEAN IMPACT DETECTED</h3>
-                            <div class="impact-item">Impact location: <span class="impact-value">${this.currentCity}</span></div>
-                            <div class="impact-item">The asteroid impacted <span class="ocean-impact">the ocean</span> with minimal immediate casualties</div>
+                    impactData.innerHTML = imagesHtml + `
+                        <div class="impact-section" data-zone="crater">
+                            <h3>ðŸ’¥ OCEAN IMPACT</h3>
+                            <div class="impact-item"><span class="impact-value">${results.crater.diameter} mile</span> wide crater</div>
+                            <div class="impact-item">The crater is <span class="impact-value">${results.crater.depth} ft</span> deep on the sea floor</div>
+                            <div class="impact-item">The impact may create a tsunami reaching <span class="impact-value">${results.tsunami.reach_miles} miles</span> with estimated wave height <span class="impact-value">${results.tsunami.waveHeight_ft} ft</span></div>
+                            <div class="impact-item">Energy: <span class="impact-value">${results.energyGT} Gigatons (â‰ˆ ${results.energyMT} Mt)</span></div>
+                            <div class="impact-item">Frequency: <span class="impact-value">${results.frequency}</span></div>
                         </div>
 
-                        <div class="impact-section" data-zone="tsunami">
-                            <h3>🌊 TSUNAMI EFFECTS</h3>
-                            <div class="impact-item"><span class="impact-value">${results.tsunami.waveHeight} ft</span> tsunami wave height</div>
-                            <div class="impact-item">Tsunami would travel <span class="impact-value">${results.tsunami.radius} miles</span></div>
-                            <div class="impact-item">An estimated <span class="impact-value">${results.tsunami.coastalFatalities} people</span> would die from coastal flooding</div>
-                            <div class="impact-item">Coastal damage within <span class="impact-value">${results.tsunami.coastalDamage} miles</span> of shorelines</div>
-                        </div>
-
-                        <div class="impact-section">
-                            <h3>💥 ENERGY RELEASE</h3>
-                            <div class="impact-item">The impact released <span class="impact-value">${results.energy.toFixed(2)} megatons</span> of TNT equivalent energy</div>
-                            <div class="impact-item">Massive water vaporization and steam explosion</div>
-                            <div class="impact-item">Significant marine life destruction near impact site</div>
-                        </div>
-                    `;
-                } else {
-                    impactData.innerHTML = `
                         <div class="impact-section" data-zone="fireball">
-                            <h3>🔥 ${results.fireball.radius} MILE WIDE FIREBALL</h3>
+                            <h3>ðŸ”¥ ${results.fireball.radius_miles} MILE WIDE FIREBALL</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.fireball.fatalities} people</span> would die from the fireball</div>
-                            <div class="impact-item">An estimated <span class="impact-value">${results.fireball.thirdDegree} people</span> would receive 3rd degree burns</div>
-                            <div class="impact-item">An estimated <span class="impact-value">${results.fireball.secondDegree} people</span> would receive 2nd degree burns</div>
                         </div>
 
                         <div class="impact-section" data-zone="shockwave">
-                            <h3>💨 SHOCK WAVE</h3>
-                            <div class="impact-item"><span class="impact-value">${results.shockwave.radius} mile</span> radius shock wave</div>
+                            <h3>ðŸ’¨ SHOCK WAVE</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.shockwave.fatalities} people</span> would die from the shock wave</div>
+                            <div class="impact-item">Shockwave radius: <span class="impact-value">${results.shockwave.radius} miles</span></div>
                         </div>
 
                         <div class="impact-section" data-zone="wind">
-                            <h3>🌪️ WIND BLAST</h3>
-                            <div class="impact-item"><span class="impact-value">${results.wind.speed} mph</span> peak wind speed</div>
+                            <h3>ðŸŒªï¸ WIND BLAST</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.wind.fatalities} people</span> would die from the wind blast</div>
                         </div>
 
                         <div class="impact-section" data-zone="earthquake">
-                            <h3>🏔️ EARTHQUAKE</h3>
+                            <h3>ðŸ”ï¸ EARTHQUAKE</h3>
                             <div class="impact-item"><span class="impact-value">${results.earthquake.magnitude} magnitude</span> earthquake</div>
                             <div class="impact-item">An estimated <span class="impact-value">${results.earthquake.fatalities} people</span> would die from the earthquake</div>
+                            <div class="impact-item">The earthquake would be felt <span class="impact-value">${results.earthquake.feltDistance} miles</span> away</div>
+                        </div>
+                    `;
+                } else {
+                    impactData.innerHTML = imagesHtml + `
+                        <div class="impact-section" data-zone="crater">
+                            <h3>ðŸ’¥ LAND IMPACT - ${this.currentCity.toUpperCase()}</h3>
+                            <div class="impact-item"><span class="impact-value">${results.crater.diameter} mile</span> wide crater</div>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.crater.vaporized} people</span> would be vaporized in the crater</div>
+                            <div class="impact-item">The crater is <span class="impact-value">${results.crater.depth} ft</span> deep</div>
+                            <div class="impact-item">Energy: <span class="impact-value">${results.energyGT} Gigatons (â‰ˆ ${results.energyMT} Mt)</span></div>
+                            <div class="impact-item">Frequency: <span class="impact-value">${results.frequency}</span></div>
+                        </div>
+
+                        <div class="impact-section" data-zone="fireball">
+                            <h3>ðŸ”¥ ${results.fireball.radius_miles} MILE WIDE FIREBALL</h3>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.fireball.fatalities} people</span> would die from the fireball</div>
+                        </div>
+
+                        <div class="impact-section" data-zone="shockwave">
+                            <h3>ðŸ’¨ SHOCK WAVE</h3>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.shockwave.fatalities} people</span> would die from the shock wave</div>
+                            <div class="impact-item">Shockwave radius: <span class="impact-value">${results.shockwave.radius} miles</span></div>
+                        </div>
+
+                        <div class="impact-section" data-zone="wind">
+                            <h3>ðŸŒªï¸ WIND BLAST</h3>
+                            <div class="impact-item"><span class="impact-value">${results.wind.radius_miles} miles</span> radius for severe wind effects</div>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.wind.fatalities} people</span> would die from the wind blast</div>
+                        </div>
+
+                        <div class="impact-section" data-zone="earthquake">
+                            <h3>ðŸ”ï¸ EARTHQUAKE</h3>
+                            <div class="impact-item"><span class="impact-value">${results.earthquake.magnitude} magnitude</span> earthquake</div>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.earthquake.fatalities} people</span> would die from the earthquake</div>
+                            <div class="impact-item">The earthquake would be felt <span class="impact-value">${results.earthquake.feltDistance} miles</span> away</div>
                         </div>
                     `;
                 }
@@ -845,5 +1008,3 @@
     </script>
 </body>
 </html>
-
-
