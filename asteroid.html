@@ -3,131 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Asteroid Destroyer Hackathon</title>
+<title>Asteroid Impact Simulator - Realistic Edition</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  body { margin:0; padding:0; font-family: Arial, sans-serif; background:#111; color:#fff; display:flex; height:100vh; overflow:hidden; }
-  #map { flex:2; height:100%; }
-  #reportPanel { flex:1; background:#222; overflow-y:auto; padding:10px; box-sizing:border-box; }
-  #controls { padding:10px; text-align:center; background:#333; margin-bottom:10px; border-radius:5px; }
-  select, input { margin:5px; padding:5px; }
-  .impactReport { border-bottom:1px solid #555; padding:10px; margin-bottom:10px; }
-  .impactReport img { height:20px; vertical-align:middle; margin-right:5px; }
-  .impactReport h3 { margin:5px 0; }
+  body {
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background: #0b0c10;
+    color: white;
+    overflow: hidden;
+  }
+  #map {
+    flex: 2;
+    height: 100%;
+  }
+  .info-panel {
+    flex: 1;
+    overflow-y: scroll;
+    padding: 20px;
+    background: #141414;
+    border-left: 2px solid #222;
+  }
+  h2 {
+    color: #ff6b00;
+  }
+  .section {
+    margin-bottom: 60px;
+    padding: 15px;
+    background: #1e1e1e;
+    border-radius: 10px;
+    transition: transform 0.3s;
+  }
+  .section.active {
+    transform: scale(1.03);
+    box-shadow: 0 0 20px rgba(255,107,0,0.4);
+  }
+  .label {
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+  }
 </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div id="reportPanel">
-  <div id="controls">
-    <label>Type: 
-      <select id="type">
-        <option value="small">Small Asteroid</option>
-        <option value="medium">Medium Asteroid</option>
-        <option value="large">Large Asteroid</option>
-        <option value="comet">Comet</option>
-      </select>
-    </label>
-    <span>Click on the map to impact!</span>
+
+<div class="info-panel" id="infoPanel">
+  <h2>Asteroid Impact Results</h2>
+  <div class="section" id="crater">
+    <h3>🌋 Crater</h3>
+    <p id="craterText">Click anywhere on the map to launch an asteroid.</p>
   </div>
-  <div id="reports"></div>
+  <div class="section" id="fireball">
+    <h3>🔥 Fireball</h3>
+    <p id="fireballText"></p>
+  </div>
+  <div class="section" id="shockwave">
+    <h3>💥 Shockwave</h3>
+    <p id="shockwaveText"></p>
+  </div>
+  <div class="section" id="wind">
+    <h3>🌪️ Wind Blast</h3>
+    <p id="windText"></p>
+  </div>
+  <div class="section" id="earthquake">
+    <h3>🌎 Earthquake</h3>
+    <p id="earthquakeText"></p>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// --- Map ---
-const map = L.map('map').setView([20,0],2);
+const map = L.map('map').setView([0, 0], 2);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 7,
+  minZoom: 2,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// --- Asteroid / Comet Types ---
-const asteroidTypes = {
-  small: { size:50, speed:15000, density:3000 },
-  medium: { size:150, speed:20000, density:3000 },
-  large: { size:500, speed:25000, density:3000 },
-  comet: { size:1000, speed:40000, density:1500 }
+let circles = {};
+let labels = {};
+
+// 🌠 Material properties (kg/m³)
+const materials = {
+  iron: 7800,
+  stone: 3000,
+  carbon: 1500,
+  comet: 600
 };
 
-// --- Shockwave & crater animation ---
-function animateImpact(lat, lon, craterRadius, damageRadius){
-  let radius = 0;
-  const maxRadius = damageRadius*1000;
-  const circleLayer = L.circle([lat,lon],{radius:0,color:'red',fillColor:'red',fillOpacity:0.3}).addTo(map);
-  const craterLayer = L.circle([lat,lon],{radius:craterRadius*1000,color:'yellow',fillColor:'yellow',fillOpacity:0.5}).addTo(map);
-  const interval = setInterval(()=>{
-    radius+=10000;
-    circleLayer.setRadius(radius);
-    if(radius>=maxRadius) clearInterval(interval);
-  },30);
+// Default asteroid
+const asteroid = {
+  diameter: 1000, // meters
+  velocity: 17000, // m/s
+  density: materials.iron,
+  angle: 45 // degrees
+};
+
+// Utility function for circle creation
+function drawCircle(lat, lon, radius, color, name) {
+  if (circles[name]) map.removeLayer(circles[name]);
+  if (labels[name]) map.removeLayer(labels[name]);
+  circles[name] = L.circle([lat, lon], {
+    radius: radius * 1609, // miles → meters
+    color: color,
+    weight: 2,
+    fillOpacity: 0.1
+  }).addTo(map);
+  labels[name] = L.marker([lat, lon], {
+    icon: L.divIcon({
+      className: 'label',
+      html: `${name.charAt(0).toUpperCase() + name.slice(1)} Zone`
+    })
+  }).addTo(map);
 }
 
-// --- Physics Calculations ---
-function impactPhysics(typeObj){
-  const radius = typeObj.size/2;
-  const volume = (4/3)*Math.PI*radius**3;
-  const mass = typeObj.density*volume;
-  const speed = typeObj.speed; // m/s
-  const energyJ = 0.5*mass*speed**2;
-  const energyTNT = energyJ/4.184e15; // in Gigatons
-
-  // Crater size
-  const craterDiameterKm = 0.01 * energyTNT**0.3 * 100;
-  const craterDepthKm = craterDiameterKm/3;
-
-  // Fireball
-  const fireballRadiusKm = craterDiameterKm*3;
-  const shockwaveRadiusKm = craterDiameterKm*10;
-  const windBlastRadiusKm = craterDiameterKm*12;
-  const earthquakeRadiusKm = craterDiameterKm*8;
-
-  // Casualty estimates (scaled for demo)
-  const vaporized = Math.floor(energyTNT*1e5);
-  const fireballDeaths = Math.floor(energyTNT*2e5);
-  const shockwaveDeaths = Math.floor(energyTNT*1.5e5);
-  const windDeaths = Math.floor(energyTNT*1e5);
-  const earthquakeDeaths = Math.floor(energyTNT*5000);
-
-  return {
-    energyTNT, craterDiameterKm, craterDepthKm,
-    fireballRadiusKm, shockwaveRadiusKm, windBlastRadiusKm, earthquakeRadiusKm,
-    vaporized, fireballDeaths, shockwaveDeaths, windDeaths, earthquakeDeaths,
-    impactSpeedMph: speed*2.23694
-  };
-}
-
-// --- Generate Dynamic Report with Images ---
-function addReport(type, data){
-  const reportDiv = document.createElement('div');
-  reportDiv.className = 'impactReport';
-  reportDiv.innerHTML = `
-    <h3><img src="https://img.icons8.com/ios-filled/50/ffcc00/meteor.png"/> ${type} Impact</h3>
-    <p><strong>Impact Speed:</strong> ${data.impactSpeedMph.toFixed(0)} mph</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/ff0000/explosion.png"/> Energy Released: ${data.energyTNT.toFixed(2)} Gigatons TNT</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/ffff00/crater.png"/> Crater: ${data.craterDiameterKm.toFixed(2)} km wide, ${data.craterDepthKm.toFixed(2)} km deep</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/ff6600/fire-element.png"/> Fireball Radius: ${data.fireballRadiusKm.toFixed(2)} km</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/ff0000/impact.png"/> Vaporized: ${data.vaporized.toLocaleString()}</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/ff3300/fire.png"/> Fireball Deaths: ${data.fireballDeaths.toLocaleString()}</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/ff3300/wind.png"/> Shockwave Deaths: ${data.shockwaveDeaths.toLocaleString()}</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/33ccff/wind.png"/> Wind Blast Deaths: ${data.windDeaths.toLocaleString()}</p>
-    <p><img src="https://img.icons8.com/ios-filled/50/9999ff/earthquake.png"/> Earthquake Deaths: ${data.earthquakeDeaths.toLocaleString()}</p>
-  `;
-  document.getElementById('reports').prepend(reportDiv);
-}
-
-// --- Map Click ---
-map.on('click', function(e){
-  const type = document.getElementById('type').value;
-  const typeObj = asteroidTypes[type];
+// 🌍 Impact simulation
+map.on('click', (e) => {
   const lat = e.latlng.lat;
   const lon = e.latlng.lng;
 
-  const data = impactPhysics(typeObj);
-  animateImpact(lat,lon,data.craterDiameterKm/2, data.shockwaveRadiusKm);
-  addReport(type.charAt(0).toUpperCase()+type.slice(1), data);
-});
-</script>
+  const r = asteroid.diameter / 2;
+  const m = (4/3) * Math.PI * Math.pow(r, 3) * asteroid.density;
+  const E = 0.5 * m * Math.pow(asteroid.velocity, 2); // Joules
+  const Egt = E / 4.184e15; // Convert to gigatons TNT
 
+  const craterMiles = (Math.pow(E, 1/4) / 800).toFixed(1);
+  const craterDepthFt = (craterMiles * 118).toFixed(0);
+
+  const fireballMiles = (Math.pow(E, 1/4) / 600).toFixed(1);
+  const shockwaveMiles = (craterMiles * 10).toFixed(0);
+  const windMiles = (craterMiles * 12).toFixed(0);
+  const quakeMiles = (craterMiles * 20).toFixed(0);
+
+  // Draw all zones
+  drawCircle(lat, lon, craterMiles, "orange", "crater");
+  drawCircle(lat, lon, fireballMiles, "red", "fireball");
+  drawCircle(lat, lon, shockwaveMiles, "yellow", "shockwave");
+  drawCircle(lat, lon, windMiles, "blue", "wind");
+  drawCircle(lat, lon, quakeMiles, "gray", "earthquake");
+
+  map.setView([lat, lon], 6);
+
+  // Display info
+  document.getElementById("craterText").innerHTML = `
+    ${craterMiles} mile wide crater<br>
+    Crater is ${craterDepthFt} ft deep<br>
+    Impact speed: ${(asteroid.velocity * 2.237).toFixed(0)} mph<br>
+    Energy released: ${Egt.toFixed(1)} Gigatons TNT
+  `;
+  document.getElementById("fireballText").innerHTML = `
+    ${fireballMiles} mile wide fireball<br>
+    Fires ignited up to ${(fireballMiles * 4.5).toFixed(0)} miles away
+  `;
+  document.getElementById("shockwaveText").innerHTML = `
+    ${shockwaveMiles} mile radius shockwave<br>
+    Air pressure up to 240 dB<br>
+    Buildings collapse within ${(shockwaveMiles / 2).toFixed(0)} miles
+  `;
+  document.getElementById("windText").innerHTML = `
+    Peak wind speeds ${(Math.pow(Egt, 0.3) * 300).toFixed(0)} mph<br>
+    Wind blast radius ${windMiles} miles
+  `;
+  document.getElementById("earthquakeText").innerHTML = `
+    Estimated magnitude ${(0.67 * Math.log10(E) - 5.87).toFixed(1)} earthquake<br>
+    Felt up to ${quakeMiles} miles away
+  `;
+});
+
+// Scroll-driven map updates
+const sections = document.querySelectorAll('.section');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      sections.forEach(s => s.classList.remove('active'));
+      entry.target.classList.add('active');
+      const id = entry.target.id;
+      Object.keys(circles).forEach(k => {
+        circles[k].setStyle({opacity: k === id ? 1 : 0.2});
+      });
+    }
+  });
+}, { threshold: 0.5 });
+sections.forEach(section => observer.observe(section));
+</script>
 </body>
 </html>
+
