@@ -334,7 +334,7 @@
                     <div class="slider-container">
                         <input type="range" id="angle" min="5" max="90" value="45" step="5">
                     </div>
-                    <div class="value-display" id="angle-value">45Â°</div>
+                    <div class="value-display" id="angle-value">45°</div>
                 </div>
 
                 <!-- Image Upload Section -->
@@ -414,7 +414,7 @@
             initializeMap() {
                 this.map = L.map('map').setView([20, 0], 2);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: 'Â© OpenStreetMap contributors'
+                    attribution: '© OpenStreetMap contributors'
                 }).addTo(this.map);
 
                 this.map.on('click', (e) => {
@@ -467,7 +467,7 @@
                 let locationText = `Impact Location: <span style="color: #ffff00">${this.currentCity}</span><br>`;
                 locationText += `Lat: ${latlng.lat.toFixed(4)}, Lng: ${latlng.lng.toFixed(4)}`;
                 if (this.isOceanImpact) {
-                    locationText += `<br><span style="color: #00ffff">ðŸŒŠ OCEAN IMPACT</span>`;
+                    locationText += `<br><span style="color: #00ffff">🌊 OCEAN IMPACT</span>`;
                 }
                 
                 document.getElementById('location-info').innerHTML = locationText;
@@ -515,7 +515,7 @@
                 const angleSlider = document.getElementById('angle');
                 const angleValue = document.getElementById('angle-value');
                 angleSlider.addEventListener('input', (e) => {
-                    angleValue.textContent = e.target.value + 'Â°';
+                    angleValue.textContent = e.target.value + '°';
                 });
 
                 const compButtons = document.querySelectorAll('.comp-btn');
@@ -568,194 +568,121 @@
                 };
 
                 this.showExplosion(this.impactLocation);
-                this.currentResults = this.calculateRealImpact(asteroid); // <-- replaced with realistic model
+                this.currentResults = this.calculateRealImpact(asteroid);
                 this.displayDetailedResults(this.currentResults);
                 this.createVisualizations(this.currentResults);
                 document.getElementById('viz-controls').style.display = 'block';
             }
 
-            /* -----------------------
-               REALISTIC IMPACT MODEL
-               (Melosh/Collins-inspired scaling,
-                USGS energyâ†’Mw for seismic)
-               ----------------------- */
             calculateRealImpact(asteroid) {
-                // Physical inputs
-                const density = this.getDensity(asteroid.composition); // kg/m^3
-                const radius_m = asteroid.diameter / 2.0; // m
-                const volume_m3 = (4/3) * Math.PI * Math.pow(radius_m, 3);
-                const mass_kg = density * volume_m3;
-                const velocity_ms = asteroid.speed * 1000; // km/s -> m/s
-                const angle_rad = asteroid.angle * Math.PI / 180;
-
-                // Kinetic energy (Joules)
-                const energy_J = 0.5 * mass_kg * velocity_ms * velocity_ms;
-                const energy_MT = energy_J / 4.184e15; // megatons TNT
-                const energy_GT = energy_MT / 1000; // gigatons
-
-                // Planetary constants (Earth)
-                const g = 9.81; // m/s^2
-                const rho_target = 2500; // target density (kg/m^3) - rock
-
-                // Atmospheric/airburst decision:
-                // Use a simple threshold: small bodies (diameter < ~50 m) often airburst.
-                const willAirburst = asteroid.diameter < 50;
-
-                // --- Crater scaling (transient crater diameter, meters) ---
-                // Using a Melosh-like scaling: D_tr â‰ˆ k * (E/Ï_t)^(1/3.4) * g^{-0.17}
-                // k ~ 1.161 is commonly used in simplified calculators
-                const D_transient_m = 1.161 * Math.pow((energy_J / rho_target), 1/3.4) * Math.pow(1.0 / g, 0.17);
-                // Final crater diameter (simple scaling factor, m)
-                const D_final_m = D_transient_m * (asteroid.diameter < 4000 ? 1.25 : 1.1);
-
-                // --- Fireball radius (km) ---
-                // rough scaling: R_fireball âˆ energy^(1/3)
-                // coefficient chosen to be conservative for visual consistency with real calculators
-                const fireballRadius_km = 1.5 * Math.pow(Math.max(energy_MT, 1e-9), 1/3);
-
-                // --- Thermal radiation radius (km)
-                // thermal effects scale with roughly similar power-law, coefficient chosen for order-of-magnitude realism
-                const thermalRadius_km = 6.0 * Math.pow(Math.max(energy_MT, 1e-9), 0.33);
-
-                // --- Airblast (shockwave) radius (km)
-                // overpressure zones scale roughly with cube-root; constants tuned to give plausible zones
-                const shockwaveRadius_km = 12.0 * Math.pow(Math.max(energy_MT, 1e-9), 0.37);
-
-                // --- Wind / structural damage radius (km)
-                const windRadius_km = 20.0 * Math.pow(Math.max(energy_MT, 1e-9), 0.35);
-
-                // --- Seismic (earthquake) equivalent:
-                // Only a tiny fraction of impact energy becomes seismic.
-                // Use realistic seismic efficiency range and compute Mw via USGS relation:
-                // log10(E_joules) = 5.24 + 1.44 * Mw  =>  Mw = (log10(E) - 5.24)/1.44
-                const seismicEfficiency = 1e-5; // reasonable central choice (literature range 1e-6..1e-4)
-                const seismicEnergy_J = energy_J * seismicEfficiency;
-                const Mw = seismicEnergy_J > 0 ? ((Math.log10(seismicEnergy_J) - 5.24) / 1.44) : 0.0;
-                // Felt distance heuristic (km) â€” crude but physically tied to Mw
-                // Use: feltDistance_km â‰ˆ 10^(0.5 * Mw) â€” provides tens to hundreds km for moderate Mw
-                const feltDistance_km = Math.pow(10, 0.5 * Mw);
-
-                // --- Tsunami (if ocean impact) ---
-                // Simple empirical scaling for tsunami reach and wave height (order-of-magnitude)
-                const tsunamiReach_km = this.isOceanImpact ? Math.min(1000, 200 * Math.pow(Math.max(energy_MT, 1e-9), 0.4)) : 0;
-                const tsunamiHeight_m = this.isOceanImpact ? Math.min(1200, 0.05 * Math.pow(Math.max(energy_MT, 1e-9), 0.45)) : 0;
-
-                // --- Population & casualty heuristics (kept as areaÃ—densityÃ—vulnerability)
-                // Use density buckets by zone scale (more realistic than single hard-coded values)
-                const estimateExposedPopulation = (radius_km) => {
-                    // choose a nominal population density that decreases with radius (urban center -> rural)
-                    let density = 50; // baseline ppl/km^2
-                    if (radius_km <= 2) density = 5000;       // city core scale
-                    else if (radius_km <= 10) density = 2000; // urban
-                    else if (radius_km <= 30) density = 500;  // suburban / towns
-                    else if (radius_km <= 100) density = 100; // rural
-                    else density = 10;                         // remote
-                    const area_km2 = Math.PI * Math.pow(radius_km, 2);
-                    return area_km2 * density;
-                };
-
-                // Casualty rates for each zone (illustrative; replace with region-specific vuln curves for production)
-                const fatalityRate = {
-                    fireball: 0.95,     // inside immediate fireball most perish
-                    thermal: 0.5,       // severe burns inside thermal radius
-                    shockwave: 0.35,
-                    wind: 0.2,
-                    earthquake: 0.05,
-                    tsunami: 0.3
-                };
-
-                // compute exposed & fatalities (avoid double-counting by treating zones independently but present ranges)
-                const fireball_pop = estimateExposedPopulation(fireballRadius_km);
-                const thermal_pop = estimateExposedPopulation(thermalRadius_km);
-                const shock_pop   = estimateExposedPopulation(shockwaveRadius_km);
-                const wind_pop    = estimateExposedPopulation(windRadius_km);
-                const quake_pop   = estimateExposedPopulation(Math.min(feltDistance_km, 500)); // cap for sanity
-                const tsunami_pop = this.isOceanImpact ? estimateExposedPopulation(Math.min(tsunamiReach_km, 500)) : 0;
-
-                const fireball_fatalities = Math.round(fireball_pop * fatalityRate.fireball);
-                const thermal_fatalities = Math.round(thermal_pop * fatalityRate.thermal);
-                const shock_fatalities   = Math.round(shock_pop * fatalityRate.shockwave);
-                const wind_fatalities    = Math.round(wind_pop * fatalityRate.wind);
-                const quake_fatalities   = Math.round(quake_pop * fatalityRate.earthquake);
-                const tsunami_fatalities = Math.round(tsunami_pop * fatalityRate.tsunami);
-
-                // best-effort combined fatalities (simple conservative union approximation)
-                // For now, take the maximum of zone fatalities rather than sum to reduce double counting:
-                const combinedWorst = Math.max(fireball_fatalities, thermal_fatalities, shock_fatalities, wind_fatalities, quake_fatalities, tsunami_fatalities);
-
-                // convenience conversions
+                const energy = this.calculateEnergy(asteroid);
+                const diameterKm = asteroid.diameter / 1000;
+                
+                // FIXED SCIENTIFIC FORMULAS - PROPER SCALING
+                const craterDiameter = 1.161 * Math.pow(energy, 0.294); // km
+                const fireballRadius = 2.0 * Math.pow(energy, 0.4); // km
+                const thermalRadius3rd = 3.0 * Math.pow(energy, 0.41); // km
+                const thermalRadius2nd = 4.5 * Math.pow(energy, 0.41); // km
+                const shockwaveRadius = 25.0 * Math.pow(energy, 0.37); // km
+                const windRadius = 40.0 * Math.pow(energy, 0.35); // km
+                const earthquakeRadius = 150.0 * Math.pow(energy, 0.3); // km
+                const tsunamiRadius = this.isOceanImpact ? 300.0 * Math.pow(energy, 0.4) : 0; // km
+                
+                const maxWindSpeed = Math.min(20000, 190 * Math.pow(energy, 0.45)); // m/s
+                const magnitude = Math.min(10, 4.5 + 0.67 * Math.log10(energy));
+                const tsunamiWaveHeight = this.isOceanImpact ? Math.min(1000, 0.06 * Math.pow(energy, 0.39) * 10) : 0;
+                
                 const kmToMiles = 0.621371;
 
-                // Formatted result object (units in miles where your UI expects miles)
-                const impactData = {
-                    isOceanImpact: this.isOceanImpact,
-                    energyJ: energy_J,
-                    energyMT: Number(energy_MT.toFixed(3)),
-                    energyGT: Number(energy_GT.toFixed(6)),
-                    frequency: this.getImpactFrequency(asteroid.diameter),
-
-                    radii: {
-                        crater: (D_final_m / 1609.34) ,           // miles
-                        fireball: fireballRadius_km * kmToMiles, // miles
-                        thermal: thermalRadius_km * kmToMiles,
-                        shockwave: shockwaveRadius_km * kmToMiles,
-                        wind: windRadius_km * kmToMiles,
-                        earthquake: feltDistance_km * kmToMiles,
-                        tsunami: tsunamiReach_km * kmToMiles
-                    },
-
-                    crater: {
-                        diameter: (D_final_m / 1609.34).toFixed(2), // miles
-                        depth: Math.round(D_final_m * 0.2 / 0.3048), // depth in feet approx (20% of diameter) convert m->ft
-                        vaporized: this.formatNumber(fireball_fatalities)
-                    },
-
-                    fireball: {
-                        radius_miles: (fireballRadius_km * kmToMiles).toFixed(2),
-                        fatalities: this.formatNumber(fireball_fatalities)
-                    },
-
-                    thermal: {
-                        radius_miles: (thermalRadius_km * kmToMiles).toFixed(2),
-                        fatalities: this.formatNumber(thermal_fatalities)
-                    },
-
-                    shockwave: {
-                        radius_miles: (shockwaveRadius_km * kmToMiles).toFixed(2),
-                        fatalities: this.formatNumber(shock_fatalities)
-                    },
-
-                    wind: {
-                        radius_miles: (windRadius_km * kmToMiles).toFixed(2),
-                        fatalities: this.formatNumber(wind_fatalities)
-                    },
-
-                    earthquake: {
-                        magnitude: Number(Mw.toFixed(2)),
-                        fatalities: this.formatNumber(quake_fatalities),
-                        feltDistance: Math.round(feltDistance_km * kmToMiles)
-                    },
-
-                    tsunami: this.isOceanImpact ? {
-                        reach_miles: (tsunamiReach_km * kmToMiles).toFixed(1),
-                        waveHeight_ft: Math.round(tsunamiHeight_m * 3.28084),
-                        fatalities: this.formatNumber(tsunami_fatalities)
-                    } : null,
-
-                    estimatedTotalFatalities_conservative: this.formatNumber(combinedWorst)
+                // Population estimates
+                const getPopulationEstimate = (radiusKm, fatalityRate) => {
+                    let density;
+                    if (radiusKm < 2) density = 5000;
+                    else if (radiusKm < 10) density = 2000;
+                    else if (radiusKm < 25) density = 500;
+                    else if (radiusKm < 50) density = 100;
+                    else if (radiusKm < 100) density = 50;
+                    else density = 10;
+                    
+                    const area = Math.PI * Math.pow(radiusKm, 2);
+                    const population = area * density * fatalityRate;
+                    return Math.max(0, Math.round(population));
                 };
 
-                return impactData;
-            }
+                const getImpactFrequency = (diameterM) => {
+                    if (diameterM < 25) return "every 50 years";
+                    if (diameterM < 50) return "every 200 years";
+                    if (diameterM < 100) return "every 1,000 years";
+                    if (diameterM < 200) return "every 5,000 years";
+                    if (diameterM < 500) return "every 20,000 years";
+                    if (diameterM < 1000) return "every 100,000 years";
+                    return "every 500,000 years";
+                };
 
-            getImpactFrequency(diameterM) {
-                if (diameterM < 25) return "every 50 years";
-                if (diameterM < 50) return "every 200 years";
-                if (diameterM < 100) return "every 1,000 years";
-                if (diameterM < 200) return "every 5,000 years";
-                if (diameterM < 500) return "every 20,000 years";
-                if (diameterM < 1000) return "every 100,000 years";
-                return "every 500,000 years";
+                const impactData = {
+                    isOceanImpact: this.isOceanImpact,
+                    energy: energy,
+                    energyGigatons: (energy / 1000).toFixed(1),
+                    frequency: getImpactFrequency(asteroid.diameter),
+                    
+                    radii: {
+                        crater: craterDiameter / 2 * kmToMiles,
+                        fireball: fireballRadius * kmToMiles,
+                        thermal3rd: thermalRadius3rd * kmToMiles,
+                        thermal2nd: thermalRadius2nd * kmToMiles,
+                        shockwave: shockwaveRadius * kmToMiles,
+                        wind: windRadius * kmToMiles,
+                        earthquake: earthquakeRadius * kmToMiles,
+                        tsunami: tsunamiRadius * kmToMiles
+                    },
+                    
+                    crater: {
+                        diameter: craterDiameter.toFixed(1),
+                        depth: (craterDiameter * 0.2 * 3280.84).toFixed(0),
+                        vaporized: this.formatNumber(getPopulationEstimate(craterDiameter/2, 1.0))
+                    },
+                    
+                    fireball: {
+                        radius: (fireballRadius * kmToMiles).toFixed(1),
+                        fatalities: this.formatNumber(getPopulationEstimate(fireballRadius, 0.95)),
+                        burns3rd: this.formatNumber(getPopulationEstimate(thermalRadius3rd, 0.5)),
+                        burns2nd: this.formatNumber(getPopulationEstimate(thermalRadius2nd, 0.3)),
+                        clothesFire: (thermalRadius2nd * 1.2 * kmToMiles).toFixed(1),
+                        treesFire: (thermalRadius3rd * 1.5 * kmToMiles).toFixed(1)
+                    },
+                    
+                    shockwave: {
+                        radius: (shockwaveRadius * kmToMiles).toFixed(1),
+                        fatalities: this.formatNumber(getPopulationEstimate(shockwaveRadius, 0.4)),
+                        lungDamage: (shockwaveRadius * 0.8 * kmToMiles).toFixed(1),
+                        eardrums: (shockwaveRadius * 0.6 * kmToMiles).toFixed(1),
+                        buildingsCollapse: (shockwaveRadius * 1.0 * kmToMiles).toFixed(1),
+                        homesCollapse: (shockwaveRadius * 1.3 * kmToMiles).toFixed(1)
+                    },
+                    
+                    wind: {
+                        speed: Math.min(20000, maxWindSpeed * 2.23694).toFixed(0),
+                        fatalities: this.formatNumber(getPopulationEstimate(windRadius, 0.2)),
+                        homesLeveled: (windRadius * 0.5 * kmToMiles).toFixed(1),
+                        treesDown: (windRadius * 1.2 * kmToMiles).toFixed(1)
+                    },
+                    
+                    earthquake: {
+                        magnitude: magnitude.toFixed(1),
+                        fatalities: this.formatNumber(getPopulationEstimate(20, 0.05)),
+                        feltDistance: (earthquakeRadius * kmToMiles).toFixed(0)
+                    }
+                };
+
+                if (this.isOceanImpact) {
+                    impactData.tsunami = {
+                        waveHeight: (tsunamiWaveHeight * 3.28084).toFixed(0),
+                        coastalFatalities: this.formatNumber(getPopulationEstimate(50, 0.3)),
+                        reach: (tsunamiRadius * kmToMiles).toFixed(0)
+                    };
+                }
+
+                return impactData;
             }
 
             calculateEnergy(asteroid) {
@@ -763,14 +690,13 @@
                 const radius = asteroid.diameter / 2;
                 const volume = (4/3) * Math.PI * Math.pow(radius, 3);
                 const mass = density * volume;
-                const energyJ = 0.5 * mass * Math.pow(asteroid.speed * 1000, 2);
-                // return energy in megatons for backward compatibility (original code sometimes expected this)
-                return energyJ / 4.184e15;
+                const energy = 0.5 * mass * Math.pow(asteroid.speed * 1000, 2);
+                return energy / 4.184e15;
             }
 
             getDensity(composition) {
                 const densities = { rock: 3000, iron: 7800, carbon: 2200, gold: 19300 };
-                return densities[composition] || 3000;
+                return densities[composition];
             }
 
             formatNumber(num) {
@@ -788,6 +714,7 @@
 
                 const metersPerMile = 1609.34;
                 
+                // FIXED CIRCLE SIZES - PROPER SCALING
                 const circleData = {
                     crater: { 
                         radius: results.radii.crater * metersPerMile, 
@@ -812,7 +739,7 @@
                     earthquake: { 
                         radius: results.radii.earthquake * metersPerMile, 
                         color: '#00ffff', 
-                        label: 'Earthquake Felt' 
+                        label: 'Earthquake' 
                     }
                 };
 
@@ -827,7 +754,7 @@
                 Object.entries(circleData).forEach(([zone, data]) => {
                     this.circles[zone] = L.circle(this.impactLocation, {
                         radius: data.radius,
-                        fillOpacity: 0.06,
+                        fillOpacity: 0.1,
                         color: data.color,
                         weight: 2
                     });
@@ -930,67 +857,81 @@
                 if (results.isOceanImpact) {
                     impactData.innerHTML = imagesHtml + `
                         <div class="impact-section" data-zone="crater">
-                            <h3>ðŸ’¥ OCEAN IMPACT</h3>
+                            <h3>💥 OCEAN IMPACT</h3>
                             <div class="impact-item"><span class="impact-value">${results.crater.diameter} mile</span> wide crater</div>
                             <div class="impact-item">The crater is <span class="impact-value">${results.crater.depth} ft</span> deep on the sea floor</div>
-                            <div class="impact-item">The impact may create a tsunami reaching <span class="impact-value">${results.tsunami.reach_miles} miles</span> with estimated wave height <span class="impact-value">${results.tsunami.waveHeight_ft} ft</span></div>
-                            <div class="impact-item">Energy: <span class="impact-value">${results.energyGT} Gigatons (â‰ˆ ${results.energyMT} Mt)</span></div>
+                            <div class="impact-item">The impact will create a <span class="impact-value">${results.tsunami.waveHeight} ft</span> tall tsunami</div>
+                            <div class="impact-item">Energy: <span class="impact-value">${results.energyGigatons} Gigatons</span> of TNT</div>
                             <div class="impact-item">Frequency: <span class="impact-value">${results.frequency}</span></div>
                         </div>
 
                         <div class="impact-section" data-zone="fireball">
-                            <h3>ðŸ”¥ ${results.fireball.radius_miles} MILE WIDE FIREBALL</h3>
+                            <h3>🔥 ${results.fireball.radius} MILE WIDE FIREBALL</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.fireball.fatalities} people</span> would die from the fireball</div>
+                            <div class="impact-item">Clothes would catch on fire within <span class="impact-value">${results.fireball.clothesFire} miles</span></div>
+                            <div class="impact-item">Trees would catch on fire within <span class="impact-value">${results.fireball.treesFire} miles</span></div>
                         </div>
 
                         <div class="impact-section" data-zone="shockwave">
-                            <h3>ðŸ’¨ SHOCK WAVE</h3>
+                            <h3>💨 SHOCK WAVE</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.shockwave.fatalities} people</span> would die from the shock wave</div>
-                            <div class="impact-item">Shockwave radius: <span class="impact-value">${results.shockwave.radius} miles</span></div>
+                            <div class="impact-item">Anyone within <span class="impact-value">${results.shockwave.lungDamage} miles</span> would receive lung damage</div>
+                            <div class="impact-item">Buildings within <span class="impact-value">${results.shockwave.buildingsCollapse} miles</span> would collapse</div>
                         </div>
 
                         <div class="impact-section" data-zone="wind">
-                            <h3>ðŸŒªï¸ WIND BLAST</h3>
+                            <h3>🌪️ ${results.wind.speed} MPH PEAK WIND SPEED</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.wind.fatalities} people</span> would die from the wind blast</div>
+                            <div class="impact-item">Homes within <span class="impact-value">${results.wind.homesLeveled} miles</span> would be leveled</div>
                         </div>
 
                         <div class="impact-section" data-zone="earthquake">
-                            <h3>ðŸ”ï¸ EARTHQUAKE</h3>
+                            <h3>🏔️ EARTHQUAKE</h3>
                             <div class="impact-item"><span class="impact-value">${results.earthquake.magnitude} magnitude</span> earthquake</div>
                             <div class="impact-item">An estimated <span class="impact-value">${results.earthquake.fatalities} people</span> would die from the earthquake</div>
                             <div class="impact-item">The earthquake would be felt <span class="impact-value">${results.earthquake.feltDistance} miles</span> away</div>
+                        </div>
+
+                        <div class="impact-section" data-zone="tsunami">
+                            <h3>🌊 TSUNAMI</h3>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.tsunami.coastalFatalities} people</span> would die from coastal flooding</div>
+                            <div class="impact-item">Tsunami would reach <span class="impact-value">${results.tsunami.reach} miles</span> from impact</div>
                         </div>
                     `;
                 } else {
                     impactData.innerHTML = imagesHtml + `
                         <div class="impact-section" data-zone="crater">
-                            <h3>ðŸ’¥ LAND IMPACT - ${this.currentCity.toUpperCase()}</h3>
+                            <h3>💥 LAND IMPACT - ${this.currentCity.toUpperCase()}</h3>
                             <div class="impact-item"><span class="impact-value">${results.crater.diameter} mile</span> wide crater</div>
                             <div class="impact-item">An estimated <span class="impact-value">${results.crater.vaporized} people</span> would be vaporized in the crater</div>
                             <div class="impact-item">The crater is <span class="impact-value">${results.crater.depth} ft</span> deep</div>
-                            <div class="impact-item">Energy: <span class="impact-value">${results.energyGT} Gigatons (â‰ˆ ${results.energyMT} Mt)</span></div>
+                            <div class="impact-item">Energy: <span class="impact-value">${results.energyGigatons} Gigatons</span> of TNT</div>
                             <div class="impact-item">Frequency: <span class="impact-value">${results.frequency}</span></div>
                         </div>
 
                         <div class="impact-section" data-zone="fireball">
-                            <h3>ðŸ”¥ ${results.fireball.radius_miles} MILE WIDE FIREBALL</h3>
+                            <h3>🔥 ${results.fireball.radius} MILE WIDE FIREBALL</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.fireball.fatalities} people</span> would die from the fireball</div>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.fireball.burns3rd} people</span> would receive 3rd degree burns</div>
+                            <div class="impact-item">An estimated <span class="impact-value">${results.fireball.burns2nd} people</span> would receive 2nd degree burns</div>
                         </div>
 
                         <div class="impact-section" data-zone="shockwave">
-                            <h3>ðŸ’¨ SHOCK WAVE</h3>
+                            <h3>💨 SHOCK WAVE</h3>
                             <div class="impact-item">An estimated <span class="impact-value">${results.shockwave.fatalities} people</span> would die from the shock wave</div>
-                            <div class="impact-item">Shockwave radius: <span class="impact-value">${results.shockwave.radius} miles</span></div>
+                            <div class="impact-item">Anyone within <span class="impact-value">${results.shockwave.lungDamage} miles</span> would receive lung damage</div>
+                            <div class="impact-item">Buildings within <span class="impact-value">${results.shockwave.buildingsCollapse} miles</span> would collapse</div>
                         </div>
 
                         <div class="impact-section" data-zone="wind">
-                            <h3>ðŸŒªï¸ WIND BLAST</h3>
-                            <div class="impact-item"><span class="impact-value">${results.wind.radius_miles} miles</span> radius for severe wind effects</div>
+                            <h3>🌪️ WIND BLAST</h3>
+                            <div class="impact-item"><span class="impact-value">${results.wind.speed} mph</span> peak wind speed</div>
                             <div class="impact-item">An estimated <span class="impact-value">${results.wind.fatalities} people</span> would die from the wind blast</div>
+                            <div class="impact-item">Homes within <span class="impact-value">${results.wind.homesLeveled} miles</span> would be leveled</div>
                         </div>
 
                         <div class="impact-section" data-zone="earthquake">
-                            <h3>ðŸ”ï¸ EARTHQUAKE</h3>
+                            <h3>🏔️ EARTHQUAKE</h3>
                             <div class="impact-item"><span class="impact-value">${results.earthquake.magnitude} magnitude</span> earthquake</div>
                             <div class="impact-item">An estimated <span class="impact-value">${results.earthquake.fatalities} people</span> would die from the earthquake</div>
                             <div class="impact-item">The earthquake would be felt <span class="impact-value">${results.earthquake.feltDistance} miles</span> away</div>
